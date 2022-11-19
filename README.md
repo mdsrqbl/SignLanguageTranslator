@@ -26,8 +26,8 @@ The goal is to provide a user friendly api like HuggingFace to novel Sign Langua
         - Since the supported vocabulary is handcrafted, unknown words (or spellings) must be substituted with the supported words.
 
 ## How to install the package
-- git clone
-- pip install
+- git clone https://github.com/mdsrqbl/SignLanguageTranslator.git
+- pip install git+https://github.com/mdsrqbl/SignLanguageTranslator.git
 
 ## Package Architecture
 - 
