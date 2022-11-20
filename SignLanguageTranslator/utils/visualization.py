@@ -18,7 +18,7 @@ class Colors:
     RED    = (1, 0, 0)
     GREEN  = (0, 1, 0)
     BLUE   = (0, 0, 1)
-    BROWN  = (1, 1, 0)
+    CYAN = (0, 1, 1)
     PURPLE = (1, 0, 1)
 
 POSE_CONNECTIONS = [(15, 21), (16, 20), (18, 20), ( 3,  7), (14, 16), (23, 25), (28, 30), (11, 23), (27, 31), ( 6,  8), (15, 17), (24, 26), (16, 22), ( 4,  5), ( 5,  6), (29, 31), (12, 24), (23, 24), ( 0,  1), ( 9, 10), ( 1,  2), ( 0,  4), (11, 13), (30, 32), (28, 32), (15, 19), (16, 18), (25, 27), (26, 28), (12, 14), (17, 19), ( 2,  3), (11, 12), (27, 29), (13, 15)]
@@ -43,7 +43,7 @@ def _get_hand_connection_color(start, end):
            Colors.BLUE  if start >= 17 else _get_default_connection_color(start, end)
 
 def _get_pose_connection_color(start, end): 
-    return Colors.BROWN  if (start % 2 == 1 and end % 2 == 1) else \
+    return Colors.CYAN if (start % 2 == 1 and end % 2 == 1) else \
            Colors.PURPLE if (start % 2 == 0 and end % 2 == 0) else _get_default_connection_color(start, end)
 
 def _get_all_connection_color(start, end):
@@ -66,10 +66,10 @@ def infer_connections(n_landmarks):
             HAND_CONNECTIONS if n_landmarks == N_HAND_LANDMARKS else \
             ALL_CONNECTIONS  if n_landmarks == N_ALL_LANDMARKS  else None
 
-def _get_new_plt_fig(axis_lims=None, elev=10,azim=10, fig_width=10, fig_height=10):
+def _get_new_plt_fig(axis_lims=None, elev=15,azim=25, fig_width=10, fig_height=10):
     fig = plt.figure(figsize=(fig_width, fig_height))
-    ax  = plt.axes(projection='3d')
-    ax.view_init(elev = elev, azim = azim)
+    ax = fig.add_subplot(projection='3d')
+    ax.view_init(elev = elev, azim = azim, vertical_axis='y')
     ax.set_box_aspect([1, 1, 1])
 
     if axis_lims:
@@ -85,7 +85,7 @@ def _get_new_plt_fig(axis_lims=None, elev=10,azim=10, fig_width=10, fig_height=1
 
 # put landmarks on  3D graph
 def plot_landmarks(landmarks, connections=None,
-                    fig = None, ax = None, axis_lims = None, elev = 10, azim = 10,
+                    fig = None, ax = None, axis_lims = None, elev = 15, azim = 25,
                     landmarks_color = Colors.RED, landmark_size=5,
                 ):
     """
@@ -164,7 +164,7 @@ def _get_box(x0, x1, y0, y1, z0, z1):
 
 def plot_multi_frame_landmarks(multi_frame_landmarks, connections=None,
                                 landmarks_color = Colors.RED,
-                                axis_lims = None, elev = 10, azim = 10):
+                                axis_lims = None, elev = 15, azim = 25):
 
     x0, x1, y0, y1, z0, z1 = _get_box_coord_ranges(multi_frame_landmarks)
     box_coords, box_connections = _get_box(x0, x1, y0, y1, z0, z1)
@@ -184,7 +184,7 @@ def _fig_to_image(fig, ax=None):
 
 def landmarks_to_image(landmarks, connections=None,
                        landmarks_color = Colors.RED,
-                       axis_lims = None, elev = 10, azim = 10):
+                       axis_lims = None, elev = 15, azim = 25):
 
     if connections is None:
         connections = infer_connections(len(landmarks))
@@ -201,7 +201,7 @@ def landmarks_to_image(landmarks, connections=None,
 
 def landmarks_to_video(multi_frame_landmarks, connections=None,
                        landmarks_color = Colors.RED,
-                       axis_lims = None, elev = 10, azim = 10,
+                       axis_lims = None, elev = 15, azim = 25,
                        fps=24, rotate=True):
                        
     if connections is None:
