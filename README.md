@@ -22,6 +22,7 @@ The goal is to provide a user friendly api like HuggingFace to novel Sign Langua
 3. Preprocessing Utilities
     1. Pose Extraction
         - Mediapipe 3D world coordinates and 2D image coordinates
+        - Pose Visualization
     2. Text normalization
         - Since the supported vocabulary is handcrafted, unknown words (or spellings) must be substituted with the supported words.
 
