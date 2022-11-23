@@ -7,6 +7,7 @@ import numpy as np
 
 ## visualization
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import moviepy.editor as mpy
 from moviepy.video.io.bindings import mplfig_to_npimage
 from moviepy.video.VideoClip import DataVideoClip
@@ -18,7 +19,7 @@ class Colors:
     RED    = (1, 0, 0)
     GREEN  = (0, 1, 0)
     BLUE   = (0, 0, 1)
-    CYAN = (0, 1, 1)
+    CYAN   = (0, 1, 1)
     PURPLE = (1, 0, 1)
 
 POSE_CONNECTIONS = [(15, 21), (16, 20), (18, 20), ( 3,  7), (14, 16), (23, 25), (28, 30), (11, 23), (27, 31), ( 6,  8), (15, 17), (24, 26), (16, 22), ( 4,  5), ( 5,  6), (29, 31), (12, 24), (23, 24), ( 0,  1), ( 9, 10), ( 1,  2), ( 0,  4), (11, 13), (30, 32), (28, 32), (15, 19), (16, 18), (25, 27), (26, 28), (12, 14), (17, 19), ( 2,  3), (11, 12), (27, 29), (13, 15)]
@@ -27,34 +28,44 @@ HAND_CONNECTIONS = [( 3,  4), ( 0,  5), (17, 18), ( 0, 17), (13, 14), (13, 17), 
 N_POSE_LANDMARKS = max([index for connection in POSE_CONNECTIONS for index in connection]) + 1
 N_HAND_LANDMARKS = max([index for connection in HAND_CONNECTIONS for index in connection]) + 1
 
+BOTH_CONNECTIONS = sorted(HAND_CONNECTIONS) \
+                 + [(N_HAND_LANDMARKS+start, N_HAND_LANDMARKS+end) 
+                    for start, end in sorted(HAND_CONNECTIONS)]
+
+N_BOTH_LANDMARKS = max([index for connection in BOTH_CONNECTIONS for index in connection]) + 1
+
 ALL_CONNECTIONS  = sorted(POSE_CONNECTIONS) \
                  + [(N_POSE_LANDMARKS+start, N_POSE_LANDMARKS+end) 
-                    for start, end in sorted(HAND_CONNECTIONS)] \
-                 + [(N_POSE_LANDMARKS+N_HAND_LANDMARKS+start, N_POSE_LANDMARKS+N_HAND_LANDMARKS+end) 
-                    for start, end in sorted(HAND_CONNECTIONS)]
+                    for start, end in sorted(BOTH_CONNECTIONS)]
 
 N_ALL_LANDMARKS = max([index for connection in ALL_CONNECTIONS for index in connection]) + 1
 
+POSE_LEFT_WRIST_INDEX = 15
+POSE_RIGHT_WRIST_INDEX = 16
+HAND_LEFT_WRIST_INDEX = 0
+
 def _get_default_connection_color(start=None, end=None):
     return Colors.BLACK
+
+def _get_pose_connection_color(start, end): 
+    return Colors.CYAN   if (start % 2 == 1 and end % 2 == 1) else \
+           Colors.PURPLE if (start % 2 == 0 and end % 2 == 0) else _get_default_connection_color(start, end)
 
 def _get_hand_connection_color(start, end): 
     return Colors.GREEN if end   <=  4 else \
            Colors.BLUE  if start >= 17 else _get_default_connection_color(start, end)
 
-def _get_pose_connection_color(start, end): 
-    return Colors.CYAN if (start % 2 == 1 and end % 2 == 1) else \
-           Colors.PURPLE if (start % 2 == 0 and end % 2 == 0) else _get_default_connection_color(start, end)
+def _get_both_connection_color(start, end):
+    return _get_hand_connection_color(start, end) \
+           if start < N_HAND_LANDMARKS and end < N_HAND_LANDMARKS else \
+           _get_hand_connection_color(start-N_HAND_LANDMARKS, end-N_HAND_LANDMARKS)
 
 def _get_all_connection_color(start, end):
     if start < N_POSE_LANDMARKS and end < N_POSE_LANDMARKS:
         color = _get_pose_connection_color(start, end)
 
-    elif start < N_POSE_LANDMARKS+N_HAND_LANDMARKS and end < N_POSE_LANDMARKS+N_HAND_LANDMARKS:
-        color = _get_hand_connection_color(start-N_POSE_LANDMARKS, end-N_POSE_LANDMARKS)
-
     elif start < N_POSE_LANDMARKS+N_HAND_LANDMARKS*2 and end < N_POSE_LANDMARKS+N_HAND_LANDMARKS*2:
-        color = _get_hand_connection_color(start-N_POSE_LANDMARKS-N_HAND_LANDMARKS, end-N_POSE_LANDMARKS-N_HAND_LANDMARKS)
+        color = _get_both_connection_color(start-N_POSE_LANDMARKS, end-N_POSE_LANDMARKS)
 
     else:
         color = _get_default_connection_color(start, end)
@@ -64,11 +75,13 @@ def _get_all_connection_color(start, end):
 def infer_connections(n_landmarks):
     return  POSE_CONNECTIONS if n_landmarks == N_POSE_LANDMARKS else \
             HAND_CONNECTIONS if n_landmarks == N_HAND_LANDMARKS else \
+            BOTH_CONNECTIONS if n_landmarks == N_BOTH_LANDMARKS else \
             ALL_CONNECTIONS  if n_landmarks == N_ALL_LANDMARKS  else None
 
 def _get_new_plt_fig(axis_lims=None, elev=15,azim=25, fig_width=10, fig_height=10):
     fig = plt.figure(figsize=(fig_width, fig_height))
     ax = fig.add_subplot(projection='3d')
+
     ax.view_init(elev = elev, azim = azim, vertical_axis='y')
     ax.set_box_aspect([1, 1, 1])
 
@@ -81,12 +94,14 @@ def _get_new_plt_fig(axis_lims=None, elev=15,azim=25, fig_width=10, fig_height=1
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
 
+    fig.tight_layout()
+
     return fig, ax
 
 # put landmarks on  3D graph
 def plot_landmarks(landmarks, connections=None,
                     fig = None, ax = None, axis_lims = None, elev = 15, azim = 25,
-                    landmarks_color = Colors.RED, landmark_size=5,
+                    landmarks_color = Colors.RED, landmark_size=5, alpha=1,
                 ):
     """
     Plots a single pose & hands vector in 3D.
@@ -104,15 +119,17 @@ def plot_landmarks(landmarks, connections=None,
 
     if connections is None:
         connections = infer_connections(len(landmarks))
+        
     if connections is None:
         raise ValueError('connections cannot be None, provide a list of tuples of pairs of landmark indices')
 
     # plot landmarks as dots
     ax.scatter3D(xs=landmarks[:, 0], ys=landmarks[:, 1], zs=landmarks[:, 2],
-                 color=landmarks_color, linewidth=landmark_size)
+                 color=landmarks_color, s=landmark_size, alpha=alpha)
 
     get_connection_color =  _get_hand_connection_color if connections == HAND_CONNECTIONS else \
                             _get_pose_connection_color if connections == POSE_CONNECTIONS else \
+                            _get_both_connection_color if connections == BOTH_CONNECTIONS else \
                             _get_all_connection_color  if connections == ALL_CONNECTIONS  else \
                             _get_default_connection_color
 
@@ -127,13 +144,32 @@ def plot_landmarks(landmarks, connections=None,
             ys = [landmarks[start, 1], landmarks[end, 1]],
             zs = [landmarks[start, 2], landmarks[end, 2]],
             color = color,
-            linewidth = 2
+            linewidth = 2,
+            label =('Left'  if connection ==  (11, 23) else 
+                    'Right' if connection ==  (12, 24) else 
+                    'Thumb' if connection in [( 3,  4), (24, 25), (36, 37), (57, 58)] else 
+                    'Pinky' if connection in [(19, 20), (40, 41), (52, 53), (73, 74)] else None),
+            alpha = alpha,
         )
+
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
 
     return fig, ax
 
 def _get_box_coord_ranges(multi_frame_landmarks):
-    all_landmarks = np.stack(multi_frame_landmarks)
+
+    if isinstance(multi_frame_landmarks, list):
+        all_landmarks = np.stack(multi_frame_landmarks)
+        
+    elif isinstance(multi_frame_landmarks, np.ndarray):
+        all_landmarks = multi_frame_landmarks
+
+    else:
+        raise ValueError("multi_frame_landmarks is not a list/array of landmarks")
+
+    assert len(all_landmarks.shape) == 3, 'all_landmarks should be 3 dimentional'
 
     x0, x1 = np.min(all_landmarks[:,:,0]), np.max(all_landmarks[:,:,0])
     y0, y1 = np.min(all_landmarks[:,:,1]), np.max(all_landmarks[:,:,1])
@@ -141,7 +177,7 @@ def _get_box_coord_ranges(multi_frame_landmarks):
 
     return x0, x1, y0, y1, z0, z1
 
-def _get_box(x0, x1, y0, y1, z0, z1):
+def _get_box(x0, x1, y0, y1, z0, z1, full=True):
     box_coords = np.array([
         [x0,y0,z0],
         [x0,y0,z1],
@@ -158,24 +194,83 @@ def _get_box(x0, x1, y0, y1, z0, z1):
         (7,6), (7,5), (7,3),
         (1,3), (3,2), (2,6),
         (6,4), (4,5), (5,1),
+    ] if full else [
+        (0,1), (1,5), (5,4), (4,0),
     ]
 
     return box_coords, box_connections
 
+def _space_out_hands(landmarks):
+    landmarks = landmarks.copy()
+
+    if landmarks.shape[-2] == N_BOTH_LANDMARKS:
+
+        landmarks[..., :N_HAND_LANDMARKS, 0] += 0.1
+        landmarks[..., N_HAND_LANDMARKS:, 0] -= 0.1
+
+    return landmarks
+
+def _move_hands_to_wrists(landmarks):
+    landmarks = landmarks.copy()
+
+    if landmarks.shape[-2] == N_ALL_LANDMARKS:
+
+        landmarks[..., :N_HAND_LANDMARKS, 0] += 0.1
+        landmarks[..., N_HAND_LANDMARKS:, 0] -= 0.1
+
+    return landmarks
+
+def _move_hands(landmarks, connections, hands_location):
+    if connections == BOTH_CONNECTIONS:
+        if hands_location is None:
+            pass
+        if hands_location == 'spaced':
+            landmarks = _space_out_hands(landmarks)
+        else:
+            raise ValueError('bad value of hands_location argument, should be None or "spaced"')
+
+    elif connections == ALL_CONNECTIONS:
+        if hands_location is None:
+            pass
+        if hands_location == 'wrists':
+            landmarks = _move_hands_to_wrists(landmarks)
+        if hands_location == 'shoulders':
+            landmarks = _move_hands_to_near_shoulders(landmarks)
+        else:
+            raise ValueError('bad value of hands_location argument, should be None or "wrists" or "shoulders"')
+
+
+    return landmarks
+
 def plot_multi_frame_landmarks(multi_frame_landmarks, connections=None,
                                 landmarks_color = Colors.RED,
-                                axis_lims = None, elev = 15, azim = 25):
+                                axis_lims = None, elev = 15, azim = 25, update_landmarks=True, hands_location='spaced'):
+    
+    if connections is None:
+        connections = infer_connections(multi_frame_landmarks.shape[-2])
+
+    if update_landmarks:
+        multi_frame_landmarks = _move_hands(multi_frame_landmarks, connections)
+        
 
     x0, x1, y0, y1, z0, z1 = _get_box_coord_ranges(multi_frame_landmarks)
-    box_coords, box_connections = _get_box(x0, x1, y0, y1, z0, z1)
+    box_coords, box_connections = _get_box(x0, x1, y0, y1, z0, z1, full=False)
     
+    x_shift = (x1 - x0)*1.25
+
     fig, ax = _get_new_plt_fig(axis_lims=axis_lims, elev=elev, azim=azim, fig_width=10*len(multi_frame_landmarks))
     
-    for i, landmarks in enumerate(multi_frame_landmarks):
-        x_shift = i * (x1 - x0)
+    # Make graph wider
+    n_frames = len(multi_frame_landmarks)
+    body_ratios = (z1-z0, x_shift * n_frames, y1-y0)
+    ax.set_box_aspect(body_ratios)
 
-        fig, ax = plot_landmarks(box_coords + x_shift, box_connections, fig = fig, ax = ax, axis_lims = axis_lims, elev = elev, azim = azim, landmarks_color = _get_default_connection_color(), landmark_size=3)
-        fig, ax = plot_landmarks(landmarks  + x_shift,     connections, fig = fig, ax = ax, axis_lims = axis_lims, elev = elev, azim = azim, landmarks_color = landmarks_color)
+    for i, landmarks in enumerate(multi_frame_landmarks):
+        box_coords[:, 0] += x_shift if i > 0 else 0
+        landmarks [:, 0] += x_shift * i
+ 
+        fig, ax = plot_landmarks(box_coords, box_connections, fig = fig, ax = ax, axis_lims = axis_lims, elev = elev, azim = azim, landmarks_color = _get_default_connection_color(), landmark_size=0, alpha=0.5)
+        fig, ax = plot_landmarks(landmarks ,     connections, fig = fig, ax = ax, axis_lims = axis_lims, elev = elev, azim = azim, landmarks_color = landmarks_color)
 
     return fig, ax
 
@@ -189,8 +284,15 @@ def landmarks_to_image(landmarks, connections=None,
     if connections is None:
         connections = infer_connections(len(landmarks))
 
-    fig, _ = plot_landmarks(landmarks, connections, axis_lims = axis_lims, elev = elev, azim = azim,
+        if connections == BOTH_CONNECTIONS:
+            multi_frame_landmarks = _space_out_hands(multi_frame_landmarks)
+
+    fig, ax = plot_landmarks(landmarks, connections, axis_lims = axis_lims, elev = elev, azim = azim,
                     landmarks_color = landmarks_color)
+    
+    body_ratios = (np.ptp(landmarks[:,2]), np.ptp(landmarks[:,0]), np.ptp(landmarks[:,1]))
+    # print(body_ratios)
+    ax.set_box_aspect(body_ratios)
 
     image = _fig_to_image(fig)
 
@@ -199,41 +301,42 @@ def landmarks_to_image(landmarks, connections=None,
 
     return image
 
-def landmarks_to_video(multi_frame_landmarks, connections=None,
-                       landmarks_color = Colors.RED,
-                       axis_lims = None, elev = 15, azim = 25,
-                       fps=24, rotate=True):
-                       
+def multi_frame_landmarks_to_video( multi_frame_landmarks, connections=None,
+                                    landmarks_color = Colors.RED,
+                                    axis_lims = None, elev = 15, azim = 25,
+                                    fps=24, rotate=True):
+                                    
     if connections is None:
-        connections = infer_connections(len(multi_frame_landmarks[0]))
+        connections = infer_connections(multi_frame_landmarks.shape[-2])
+
+        if connections == BOTH_CONNECTIONS:
+            multi_frame_landmarks = _space_out_hands(multi_frame_landmarks)
 
     if axis_lims is None:
-        scale = 0.1
+        scale = 0.05
         x0, x1, y0, y1, z0, z1 = _get_box_coord_ranges(multi_frame_landmarks)
         axis_lims = [
             x0 - abs(x0*scale), x1 + abs(x1*scale), 
             y0 - abs(y0*scale), y1 + abs(y1*scale), 
             z0 - abs(z0*scale), z1 + abs(z1*scale), 
         ]
-
-    fig, ax = _get_new_plt_fig(axis_lims=axis_lims, elev=elev, azim=azim)
-
-    fig, ax = plot_landmarks(multi_frame_landmarks[0], connections, fig = fig, ax = ax, axis_lims = axis_lims, elev = elev, azim = azim, landmarks_color = landmarks_color)
-
+    
     n_frames = len(multi_frame_landmarks)
-
+    
     def data_to_frame(t):
-        
-        ax[0].set_xdata(multi_frame_landmarks[t][:,0])
-        ax[0].set_ydata(multi_frame_landmarks[t][:,1])
-        ax[0].set_zdata(multi_frame_landmarks[t][:,2])
-        
+        fig, ax = plot_landmarks(multi_frame_landmarks[t], connections, axis_lims = axis_lims, elev = elev, azim = azim, landmarks_color = landmarks_color)
+        ax.set_box_aspect((z1-z0, x1-x0, y1-y0))
         if rotate:
-            ax.view_init(elev = elev - elev*t*2/n_frames, azim = azim - azim*t*2/n_frames)
+            ax.view_init(elev = elev - elev*t*1/n_frames, azim = azim - azim*t*2/n_frames, vertical_axis='y')
 
-        return _fig_to_image(fig)
+        image = _fig_to_image(fig)
 
-    timesteps = range(1, n_frames)
+        plt.clf()
+        plt.close()
+
+        return image
+
+    timesteps = range(n_frames)
     clip = DataVideoClip(timesteps, data_to_frame, fps=fps)
 
     return clip
