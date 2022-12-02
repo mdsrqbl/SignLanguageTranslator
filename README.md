@@ -37,3 +37,6 @@ The goal is to provide a user friendly api like HuggingFace to novel Sign Langua
 
 ## Credits and Gratitude
 
+
+## Bonus
+pip install . -e
