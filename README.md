@@ -7,18 +7,18 @@ The goal is to provide a user friendly api like HuggingFace to novel Sign Langua
 
 #### Major Components and Goals ####
 1. Sign language to Text
-    - In speech to text translation, features such as mel-spectrograms are extracted from audio and fed into neural networks which then output text token corresponding to what was said in the audio. 
+    - In speech to text translation, features such as mel-spectrograms are extracted from audio and fed into neural networks which then output text token corresponding to what was said in the audio.
     - Similarly, pose vectors (2D or 3D) are extracted from video and to be be mapped to text corresponding to the performed signs, they are fed into a neural network which is a finetuned checkpoint of a SOTA speech to text model trained using gradual unfreezing starting from the layers near input towards the output layers.
 
 2. Text to Sign Language
     - This is a relatively easier task as it can even be solved with HashTables. Just parse the input text and play approproate video clip for each word.
-    
+
     1. Motion Transfer
         - This allows for seamless transitions between the clips. The idea is to concatenate pose vectors in the time dimention and transfer the movements onto any given image of any person.
     2. Pose Synthesis
         - This is similar to speech synthesis. It solves the challenge of unknown words.
         - It can also be finetuned to make avatars move in desired ways using only text.
-        
+
 3. Preprocessing Utilities
     1. Pose Extraction
         - Mediapipe 3D world coordinates and 2D image coordinates
@@ -27,16 +27,51 @@ The goal is to provide a user friendly api like HuggingFace to novel Sign Langua
         - Since the supported vocabulary is handcrafted, unknown words (or spellings) must be substituted with the supported words.
 
 ## How to install the package
-- git clone https://github.com/mdsrqbl/SignLanguageTranslator.git
+    - git clone https://github.com/mdsrqbl/SignLanguageTranslator.git
+    - cd SignLanguageTranslator
+    - pip install -e .
+
 - pip install git+https://github.com/mdsrqbl/SignLanguageTranslator.git
 
 ## Package Architecture
-- 
+    SignLanguageTranslator
+    ├── SignLanguageTranslator
+    │   ├── datasets
+    │   │   ├── signs_recordings
+    │   │   │   ├── Landmarks
+    │   │   │   └── Videos
+    │   │   │
+    │   │   └── texts_parallel_corpus
+    │   │
+    │   └── utils
+    │       └── dataCollection
+    │           ├── text
+    │           └── video
+    │
+    ├── notebooks
+    │   ├── inputs
+    │   └── outputs
+    │
+    └── tests
 
+## Datasets
+ - add a clip info table, fps resolution etc
+
+## Todo:
+### monitering
+- average input length
+- average image brightness
+- average hidden landmarks
+- average hand position/distances
+- number of times null output
+- number of time quick consequtive similar input
+- when user quits
+- CTR
+- Dashboard
+- activity detection --> trim video
 ## Research Paper
 
 ## Credits and Gratitude
 
 
 ## Bonus
-pip install . -e

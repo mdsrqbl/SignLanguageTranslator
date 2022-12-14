@@ -2,10 +2,10 @@
 """
 
 import cv2
-import numpy as np
 import mediapipe as mp
+import numpy as np
 
-BACKEND = "mediapipe"
+EMBEDDING_MODEL = "mediapipe"
 
 # Mediapipe Solutions
 hands = mp.solutions.hands.Hands(
@@ -16,9 +16,7 @@ hands = mp.solutions.hands.Hands(
 )
 
 pose = mp.solutions.pose.Pose(
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5,
-    model_complexity=2
+    min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=2
 )
 
 

@@ -4,11 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "SignLanguageTranslator"
-version = "0.1.0"
+version = "0.2.0"
 readme = "README.md"
 description = "Translate between text and sign language using AI"
-author = "Mudassar Iqbal"
+authors = ["Mudassar Iqbal <mdsr.qbl@gmail.com>"]
 url = "https://github.com/mdsrqbl"
+repository = "https://github.com/mdsrqbl/SignLanguageTranslator"
+keywords = ["sign", "translation", "pose", "pakistan"]
 
 [tool.pytest.ini_options]
 addopts = "-v "
