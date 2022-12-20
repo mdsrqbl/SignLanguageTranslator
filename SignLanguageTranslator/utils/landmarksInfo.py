@@ -306,12 +306,12 @@ class LandmarksInfo:
             self.last_dim_size = landmarks.shape[-1]
 
             if self.last_dim_size == 4:
-                self.landmarks_visibility_backup = landmarks[..., 3:].copy()
+                self.landmarks_visibility_backup = landmarks[..., 3:]#.copy()
                 return landmarks[..., :3]
 
             elif self.last_dim_size == LandmarksInfo.N_POSE_FEATURES:
                 landmarks = landmarks.reshape(landmarks.shape[:-1] + (-1, 4))
-                self.landmarks_visibility_backup = landmarks[..., 3:].copy()
+                self.landmarks_visibility_backup = landmarks[..., 3:]#.copy()
                 return landmarks[..., :3]
 
             elif self.last_dim_size == LandmarksInfo.N_ALL_FEATURES:
@@ -321,7 +321,7 @@ class LandmarksInfo:
                 pose = pose.reshape(pose.shape[:-1] + (-1, 4))
                 rest = rest.reshape(rest.shape[:-1] + (-1, 3))
 
-                self.landmarks_visibility_backup = pose[..., 3:].copy()
+                self.landmarks_visibility_backup = pose[..., 3:]#.copy()
                 return concatenate([pose[..., :3], rest], axis=-2)
 
             elif self.last_dim_size in [
