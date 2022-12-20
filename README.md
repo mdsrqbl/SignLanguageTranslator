@@ -43,10 +43,13 @@ The goal is to provide a user friendly api like HuggingFace to novel Sign Langua
     │   │   │
     │   │   └── texts_parallel_corpus
     │   │
-    │   └── utils
-    │       └── dataCollection
-    │           ├── text
-    │           └── video
+    │   ├── text
+    │   ├── utils
+    │   │   └── dataCollection
+    │   │       ├── text
+    │   │       └── video
+    │   │
+    │   └── vision
     │
     ├── notebooks
     │   ├── inputs

@@ -39,7 +39,6 @@ def tree(
         child_dirs = []
         for child in children_paths:
             if os.path.split(child)[-1] in ignore:
-                children_paths.remove(child)
                 continue
 
             if os.path.isdir(child):
@@ -48,7 +47,7 @@ def tree(
                 if not directory_only:
                     child_files.append(os.path.split(child)[-1])
 
-        total_children = len(child_dirs) if directory_only else len(children_paths)
+        total_children = len(child_dirs) if directory_only else len(child_dirs) + len(child_files)
 
         for i, child in enumerate(sorted(child_files) + sorted(child_dirs)):
             if i < total_children - 1:
@@ -62,6 +61,7 @@ def tree(
                 prev_indent + grandchild_indent,
                 directory_only,
                 extra_line=extra_line,
+                ignore=ignore,
             )
 
         if extra_line and (total_children > 0):

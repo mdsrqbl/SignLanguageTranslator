@@ -14,7 +14,7 @@ from moviepy.video.io.bindings import mplfig_to_npimage
 from moviepy.video.VideoClip import DataVideoClip
 from PIL.Image import fromarray as np2pil
 
-from .landmarksInfo import LandmarksInfo
+from ..utils.landmarksInfo import LandmarksInfo
 
 
 def _get_new_plt_fig(

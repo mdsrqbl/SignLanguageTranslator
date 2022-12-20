@@ -11,7 +11,7 @@ from scipy.interpolate import interp1d as interpolate
 from scipy.spatial.transform import Rotation as R
 from skimage.transform import estimate_transform
 
-from .landmarksInfo import LandmarksInfo
+from ..utils.landmarksInfo import LandmarksInfo
 
 
 def _arg_type_normalizer(*args) -> Union[List[float], Tuple[float, float]]:

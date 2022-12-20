@@ -1,4 +1,8 @@
 """concatenate multiple clips (video & pose) with transitions
+
+Raises:
+    NotImplementedError: numpy.ndarray or torch.Tensor
+    ValueError: various
 """
 
 from typing import List, Tuple, Union
@@ -8,8 +12,8 @@ import numpy as np
 import torch
 from scipy.signal import find_peaks
 
+from ..utils.landmarksInfo import LandmarksInfo
 from . import transforms as T
-from .landmarksInfo import LandmarksInfo
 
 
 def _find_edge_peaks_heights(
